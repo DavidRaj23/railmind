@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RailMind</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#f0f4f8;min-height:100vh;}
+
+/* ── layout ── */
+.page{max-width:1100px;margin:0 auto;padding:32px 24px 60px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.logo{font-size:17px;font-weight:700;color:#1a1a2e;}
+.logo span{color:#2563EB;}
+.user-chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e2e8f0;border-radius:50px;padding:5px 14px 5px 5px;cursor:pointer;transition:border-color .15s;}
+.user-chip:hover{border-color:#2563EB;}
+.uav{width:26px;height:26px;border-radius:50%;background:#EFF6FF;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#2563EB;overflow:hidden;flex-shrink:0;}
+.uav img{width:26px;height:26px;object-fit:cover;}
+.uname{font-size:12px;font-weight:600;color:#1a1a2e;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cols{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start;}
+@media(max-width:780px){.cols{grid-template-columns:1fr;}}
+
+/* ── card shell ── */
+.card{background:#fff;border-radius:20px;border:1px solid #e2e8f0;overflow:hidden;}
+
+/* ── screens ── */
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* ── login screen ── */
+.login-wrap{min-height:70vh;display:flex;align-items:center;justify-content:center;}
+.login-card{background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:44px 36px;text-align:center;max-width:380px;width:100%;}
+.login-icon{font-size:36px;margin-bottom:16px;}
+.login-title{font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:8px;}
+.login-sub{font-size:13px;color:#64748b;line-height:1.7;margin-bottom:28px;}
+#gsign{display:flex;justify-content:center;}
+.g-btn{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #dadce0;border-radius:50px;padding:11px 28px;font-size:14px;font-weight:500;cursor:pointer;color:#3c4043;font-family:'Inter',sans-serif;transition:box-shadow .15s;}
+.g-btn:hover{box-shadow:0 1px 6px rgba(0,0,0,0.12);}
+
+/* ── setup screen ── */
+.setup-banner{background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:16px;padding:20px 22px;margin-bottom:16px;}
+.setup-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;}
+.setup-emoji{font-size:22px;flex-shrink:0;}
+.setup-title{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:3px;}
+.setup-sub{font-size:12px;color:#64748b;line-height:1.6;}
+.steps{list-style:none;counter-reset:st;}
+.steps li{counter-increment:st;display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #FDE68A;font-size:13px;color:#64748b;line-height:1.5;}
+.steps li:last-child{border-bottom:none;}
+.steps li::before{content:counter(st);width:22px;height:22px;border-radius:50%;background:#FFFBEB;border:1.5px solid #FDE68A;color:#D97706;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.steps b{color:#1a1a2e;}
+.done-btn{width:100%;margin-top:14px;background:#D97706;color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.done-btn:hover{background:#b45309;}
+
+/* ── left col hero ── */
+.hero{padding:24px 22px 18px;}
+.lbl{font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;}
+.big-date{font-size:34px;font-weight:700;letter-spacing:-1px;line-height:1.1;margin-bottom:8px;color:#1a1a2e;}
+.big-date.not-open{color:#D97706;}
+.big-date.open{color:#1a1a2e;}
+.pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px;}
+.pill{font-size:12px;font-weight:500;padding:4px 12px;border-radius:50px;border:1.5px solid;}
+.pill-blue{background:#EFF6FF;color:#2563EB;border-color:#BFDBFE;}
+.pill-amber{background:#FFFBEB;color:#D97706;border-color:#FDE68A;}
+.pill-green{background:#F0FDF4;color:#16A34A;border-color:#BBF7D0;}
+.today-sub{font-size:12px;color:#94a3b8;margin-bottom:18px;}
+.cd-box{border-radius:14px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:default;}
+.cd-box.waiting{background:#EFF6FF;border:1.5px solid #BFDBFE;}
+.cd-box.open{background:#F0FDF4;border:1.5px solid #BBF7D0;cursor:pointer;}
+.cd-box.soon{background:#FFFBEB;border:1.5px solid #FDE68A;}
+.cd-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px;}
+.cd-box.waiting .cd-lbl{color:#2563EB;}
+.cd-box.open .cd-lbl{color:#15803D;}
+.cd-box.soon .cd-lbl{color:#D97706;}
+.cd-val{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;}
+.cd-box.waiting .cd-val{color:#1D4ED8;}
+.cd-box.open .cd-val{color:#15803D;}
+.cd-box.soon .cd-val{color:#D97706;}
+.cd-hint{font-size:10px;margin-top:2px;}
+.cd-box.waiting .cd-hint{color:#3B82F6;}
+.cd-box.open .cd-hint{color:#16A34A;}
+.cd-box.soon .cd-hint{color:#D97706;}
+.cd-dot{width:10px;height:10px;border-radius:50%;animation:blink 1.2s infinite;flex-shrink:0;}
+.cd-box.waiting .cd-dot{background:#2563EB;}
+.cd-box.open .cd-dot{background:#22C55E;}
+.cd-box.soon .cd-dot{background:#F59E0B;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* ── booking times ── */
+.bk-sec{padding:16px 22px 20px;border-top:1px solid #f1f5f9;}
+.bk-lbl{font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;}
+.chips{display:flex;flex-direction:column;gap:7px;}
+.chip{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:50px;padding:10px 16px;}
+.chip-l{display:flex;align-items:center;gap:9px;}
+.chip-dot{width:9px;height:9px;border-radius:50%;}
+.chip-name{font-size:13px;color:#475569;}
+.chip-time{font-size:13px;font-weight:700;color:#1a1a2e;}
+
+/* ── events strip ── */
+.ev-sec{padding:14px 22px;border-top:1px solid #f1f5f9;}
+.ev-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;}
+.ev-item:last-child{border-bottom:none;}
+.ev-name{font-size:13px;font-weight:600;color:#1a1a2e;}
+.ev-date{font-size:11px;color:#94a3b8;margin-top:1px;}
+.ev-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap;}
+.eb-gen{background:#F0FDF4;color:#16A34A;}
+.eb-tat{background:#FFFBEB;color:#D97706;}
+
+/* ── right col calendar ── */
+.cal-sec{padding:22px;}
+.cal-heading{font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:3px;}
+.cal-sub{font-size:12px;color:#94a3b8;line-height:1.5;margin-bottom:16px;}
+.cal-inner{border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;}
+.cal-head{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;border-bottom:1px solid #f1f5f9;}
+.cal-month{font-size:14px;font-weight:700;color:#1a1a2e;}
+.cal-navs{display:flex;gap:6px;}
+.cnav{width:28px;height:28px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.cnav:hover{border-color:#2563EB;background:#EFF6FF;}
+.cnav svg{width:12px;height:12px;fill:none;stroke:#64748b;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.cnav:hover svg{stroke:#2563EB;}
+.dlrow{display:grid;grid-template-columns:repeat(7,1fr);padding:10px 10px 4px;}
+.dl{text-align:center;font-size:10px;font-weight:600;color:#cbd5e1;letter-spacing:.04em;}
+.dl.sun{color:#fca5a5;}
+.dgrid{display:grid;grid-template-columns:repeat(7,1fr);padding:2px 8px 10px;gap:2px;}
+.dc{height:34px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#374151;border-radius:50%;position:relative;transition:all .1s;}
+.dc.empty,.dc.disabled{color:#e2e8f0;cursor:not-allowed;}
+.dc.today{font-weight:700;color:#2563EB;}
+.dc.today::after{content:'';width:3px;height:3px;border-radius:50%;background:#2563EB;position:absolute;bottom:3px;left:50%;transform:translateX(-50%);}
+.dc.selectable{cursor:pointer;}
+.dc.selectable:hover{background:#EFF6FF;color:#2563EB;}
+.dc.selected{background:#2563EB;color:#fff;font-weight:600;}
+.dc.tatkal-only{color:#D97706;background:#FFFBEB;}
+.dc.tatkal-only:hover{background:#FEF3C7;}
+.dc.sun-c:not(.selected):not(.disabled){color:#f97316;}
+.cal-legend{padding:6px 14px 12px;display:flex;gap:14px;justify-content:center;}
+.leg{display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b;}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+
+/* ── action panel ── */
+.act-panel{border:1.5px solid #2563EB;border-radius:14px;overflow:hidden;margin-top:10px;animation:slideIn .2s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+.act-head{padding:14px 16px;background:#EFF6FF;border-bottom:1px solid #BFDBFE;}
+.act-title{font-size:14px;font-weight:700;color:#1a1a2e;}
+.act-sub{font-size:12px;color:#64748b;margin-top:2px;}
+.win-rows{padding:12px 16px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid #f1f5f9;}
+.win-row{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border-radius:10px;padding:9px 12px;}
+.win-row.dimmed{opacity:.4;}
+.wr-l{display:flex;align-items:center;gap:8px;}
+.wr-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.wr-name{font-size:12px;font-weight:600;color:#374151;}
+.wr-date{font-size:12px;color:#64748b;text-align:right;}
+.wr-date.red{color:#DC2626;font-weight:600;}
+.wr-date.green{color:#16A34A;font-weight:600;}
+.perm-sec{padding:14px 16px;border-bottom:1px solid #f1f5f9;}
+.perm-title{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:4px;}
+.perm-sub{font-size:12px;color:#64748b;line-height:1.6;margin-bottom:12px;}
+.btn-row{display:flex;gap:8px;}
+.btn-p{flex:1;background:#2563EB;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.btn-p:hover{background:#1D4ED8;}
+.btn-p:disabled{background:#93C5FD;cursor:not-allowed;}
+.btn-s{flex:1;background:#fff;color:#1a1a2e;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.btn-s:hover{border-color:#2563EB;color:#2563EB;}
+.tatkal-opts{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+.topt{display:flex;align-items:center;gap:10px;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .12s;}
+.topt:hover{border-color:#2563EB;}
+.topt.sel{border-color:#2563EB;background:#EFF6FF;}
+.topt input{accent-color:#2563EB;width:15px;height:15px;cursor:pointer;flex-shrink:0;}
+.topt-name{font-size:13px;font-weight:600;color:#1a1a2e;}
+.topt-time{font-size:11px;color:#94a3b8;margin-top:1px;}
+.topt-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.success-strip{background:#F0FDF4;border-top:1px solid #BBF7D0;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;}
+.ss-icon{font-size:18px;flex-shrink:0;}
+.ss-title{font-size:13px;font-weight:700;color:#15803D;}
+.ss-sub{font-size:12px;color:#166534;margin-top:2px;line-height:1.5;}
+
+/* ── empty state ── */
+.empty-state{padding:32px 16px;text-align:center;}
+.es-icon{width:48px;height:48px;border-radius:16px;background:#EFF6FF;border:1px solid #BFDBFE;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;}
+.es-txt{font-size:12px;color:#94a3b8;line-height:1.8;}
+
+/* ── spinner ── */
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:5px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+/* ── toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(6px);background:#1a1a2e;color:#fff;font-size:12px;font-weight:500;padding:9px 18px;border-radius:10px;opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{background:#15803D;}
+.toast.err{background:#DC2626;}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="topbar">
+    <div class="logo">Rail<span>Mind</span></div>
+    <div id="user-area"></div>
+  </div>
+
+  <!-- ══ LOGIN ══ -->
+  <div class="screen active" id="sc-login">
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-icon">🚂</div>
+        <div class="login-title">Never miss a booking window</div>
+        <div class="login-sub">Sign in with Google to sync your David_Travel_Events calendar and auto-set IRCTC reminders.</div>
+        <div id="gsign"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETUP ══ -->
+  <div class="screen" id="sc-setup">
+    <div class="cols" style="grid-template-columns:1fr;">
+      <div class="setup-banner">
+        <div class="setup-head">
+          <div class="setup-emoji">📅</div>
+          <div>
+            <div class="setup-title">Create your travel calendar first</div>
+            <div class="setup-sub">RailMind needs a Google Calendar named exactly <b>David_Travel_Events</b>. Follow these steps:</div>
+          </div>
+        </div>
+        <ol class="steps">
+          <li><span>Open <b>Google Calendar</b> in your browser</span></li>
+          <li><span>In the left sidebar click <b>+ Other calendars → Create new calendar</b></span></li>
+          <li><span>Set the name to exactly: <b>David_Travel_Events</b></span></li>
+          <li><span>Click <b>Create calendar</b> and come back here</span></li>
+        </ol>
+        <button class="done-btn" onclick="checkCal()">I've created it — continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN ══ -->
+  <div class="screen" id="sc-main">
+    <div class="cols">
+
+      <!-- Left -->
+      <div class="card">
+        <div class="hero">
+          <div class="lbl">Tickets open today for journeys departing on</div>
+          <div class="big-date" id="big-date">—</div>
+          <div class="pills">
+            <span class="pill pill-blue" id="p-day">—</span>
+            <span class="pill pill-amber" id="p-week">—</span>
+            <span class="pill pill-green" id="p-month">—</span>
+          </div>
+          <div class="today-sub" id="today-sub">—</div>
+          <div class="cd-box waiting" id="cd-box">
+            <div>
+              <div class="cd-lbl" id="cd-lbl">General booking opens in</div>
+              <div class="cd-val" id="cd-val">--:--:--</div>
+              <div class="cd-hint" id="cd-hint">Today at 8:00 AM</div>
+            </div>
+            <div class="cd-dot"></div>
+          </div>
+        </div>
+
+        <div class="bk-sec">
+          <div class="bk-lbl">Booking times</div>
+          <div class="chips">
+            <div class="chip"><div class="chip-l"><div class="chip-dot" style="background:#22C55E"></div><span class="chip-name">General</span></div><span class="chip-time">8:00 AM</span></div>
+            <div class="chip"><div class="chip-l"><div class="chip-dot" style="background:#F59E0B"></div><span class="chip-name">AC Tatkal</span></div><span class="chip-time">10:00 AM</span></div>
+            <div class="chip"><div class="chip-l"><div class="chip-dot" style="background:#F97316"></div><span class="chip-name">Sleeper Tatkal</span></div><span class="chip-time">11:00 AM</span></div>
+          </div>
+        </div>
+
+        <!-- Events strip -->
+        <div class="ev-sec" id="ev-sec" style="display:none;">
+          <div class="bk-lbl">Your upcoming trips</div>
+          <div id="ev-list"></div>
+        </div>
+      </div>
+
+      <!-- Right -->
+      <div class="card">
+        <div class="cal-sec">
+          <div class="cal-heading">Pick your journey date</div>
+          <div class="cal-sub" id="cal-sub">Select any future date — available reminder types will be shown automatically.</div>
+          <div class="cal-inner">
+            <div class="cal-head">
+              <div class="cal-month" id="cal-month">—</div>
+              <div class="cal-navs">
+                <div class="cnav" onclick="chMonth(-1)"><svg viewBox="0 0 12 12"><polyline points="8 2 4 6 8 10"/></svg></div>
+                <div class="cnav" onclick="chMonth(1)"><svg viewBox="0 0 12 12"><polyline points="4 2 8 6 4 10"/></svg></div>
+              </div>
+            </div>
+            <div class="dlrow">
+              <div class="dl sun">S</div><div class="dl">M</div><div class="dl">T</div>
+              <div class="dl">W</div><div class="dl">T</div><div class="dl">F</div><div class="dl">S</div>
+            </div>
+            <div class="dgrid" id="dgrid"></div>
+            <div class="cal-legend">
+              <div class="leg"><div class="leg-dot" style="background:#D97706"></div>Tatkal only</div>
+              <div class="leg"><div class="leg-dot" style="background:#2563EB"></div>General + Tatkal</div>
+            </div>
+            <div id="act-panel"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const WK=['1st week','2nd week','3rd week','4th week','5th week'];
+const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MF=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CAL_NAME='David_Travel_Events';
+const TAG='[[RailMind]]';
+
+let accessToken=null,userInfo=null,calId=null;
+let vy,vm,selDate=null,tatSel=new Set(),successShown=false;
+
+/* ── utils ── */
+const el=id=>document.getElementById(id);
+const set=(id,v)=>{const e=el(id);if(e)e.textContent=v;};
+const pad=n=>String(n).padStart(2,'0');
+const addDays=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+const same=(a,b)=>a&&b&&a.toDateString()===b.toDateString();
+const dAway=d=>Math.floor((d-today())/864e5);
+const fmt=d=>d.getDate()+' '+MS[d.getMonth()]+' '+d.getFullYear();
+const fmtS=d=>d.getDate()+' '+MS[d.getMonth()]+' ('+DAYS[d.getDay()].slice(0,3)+')';
+const wkOf=d=>Math.ceil(d.getDate()/7)-1;
+function toISO(d,h,m){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(h)+':'+pad(m)+':00+05:30';}
+
+function toast(msg,type='',dur=3200){
+  const t=el('toast');t.textContent=msg;
+  t.className='toast show'+(type?' '+type:'');
+  setTimeout(()=>t.className='toast',dur);
+}
+
+function showScreen(id){
+  ['sc-login','sc-setup','sc-main'].forEach(s=>{
+    el(s).classList.remove('active');
+    el(s).style.display='none';
+  });
+  const sc=el(id);sc.classList.add('active');sc.style.display='block';
+}
+
+/* ── countdown ── */
+function startCd(){
+  const t60=addDays(today(),60);
+  set('big-date',fmt(t60));
+  set('p-day',DAYS[t60.getDay()]);
+  set('p-week',WK[wkOf(t60)]);
+  set('p-month',MF[t60.getMonth()]);
+  set('today-sub','Today is '+fmt(today())+' · '+DAYS[today().getDay()]);
+  function tick(){
+    const now=new Date(),o8=new Date();o8.setHours(8,0,0,0);
+    const box=el('cd-box');if(!box)return;
+    if(now>=o8){
+      box.className='cd-box open';box.onclick=()=>window.open('https://www.irctc.co.in','_blank');
+      set('cd-lbl','General booking is open');set('cd-val','Book now!');
+      set('cd-hint','Tap to open IRCTC and book your tickets');
+      el('big-date').className='big-date open';
+    } else {
+      const diff=o8-now,h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+      box.className='cd-box '+(diff<3600000?'soon':'waiting');box.onclick=null;
+      set('cd-lbl','General booking opens in');
+      set('cd-val',pad(h)+':'+pad(m)+':'+pad(s));
+      set('cd-hint','Today at 8:00 AM · for journeys on '+fmtS(t60));
+      el('big-date').className='big-date not-open';
+    }
+  }
+  tick();setInterval(tick,1000);
+}
+
+/* ── Google login ── */
+window.addEventListener('load',()=>{
+  const now=today(),t60=addDays(now,60);
+  vy=t60.getFullYear();vm=t60.getMonth(); // init calendar to 60-day-window month
+  vy=now.getFullYear();vm=now.getMonth();
+
+  if(window.google?.accounts){
+    google.accounts.id.initialize({client_id:'488817243515-k4qb4l1rgg3isc1b6m11ht30vn61qhpj.apps.googleusercontent.com',callback:onGSign,auto_select:false});
+    google.accounts.id.renderButton(el('gsign'),{theme:'outline',size:'large',text:'signin_with',shape:'pill',width:280});
+  } else {
+    el('gsign').innerHTML=`<button class="g-btn" onclick="demoLogin()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+      Sign in with Google
+    </button>`;
+  }
+});
+
+function demoLogin(){
+  userInfo={name:'Demo',email:'Demo@gmail.com',picture:null};
+  accessToken='demo';renderChip();checkCal();
+}
+
+function onGSign(resp){
+  const p=JSON.parse(atob(resp.credential.split('.')[1]));
+  userInfo={name:p.given_name||p.name,email:p.email,picture:p.picture};
+  const c=google.accounts.oauth2.initTokenClient({
+    client_id:'488817243515-k4qb4l1rgg3isc1b6m11ht30vn61qhpj.apps.googleusercontent.com',
+    scope:'https://www.googleapis.com/auth/calendar',
+    callback:r=>{if(r.access_token){accessToken=r.access_token;renderChip();checkCal();}}
+  });
+  c.requestAccessToken();
+}
+
+function renderChip(){
+  if(!userInfo)return;
+  const ini=userInfo.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  el('user-area').innerHTML=`<div class="user-chip" onclick="signOut()">
+    <div class="uav">${userInfo.picture?`<img src="${userInfo.picture}" alt=""/>`:`<span>${ini}</span>`}</div>
+    <div class="uname">${userInfo.name}</div>
+  </div>`;
+}
+function signOut(){if(confirm('Sign out?')){accessToken=null;userInfo=null;calId=null;selDate=null;el('user-area').innerHTML='';showScreen('sc-login');}}
+
+/* ── Calendar API ── */
+async function gcal(method,path,body){
+  if(accessToken==='demo') return demoGcal(method,path,body);
+  const r=await fetch('https://www.googleapis.com/calendar/v3'+path,{
+    method,headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},
+    body:body?JSON.stringify(body):undefined
+  });
+  return r.json();
+}
+function demoGcal(method,path,body){
+  if(path.includes('calendarList')) return Promise.resolve({items:[{summary:'David_Travel_Events',id:'demo-cal'},{summary:'Personal',id:'personal'}]});
+  if(method==='GET'&&path.includes('events')) return Promise.resolve({items:[
+    {id:'e1',summary:'Trip to Bangalore',start:{date:'2026-08-22'},description:''},
+    {id:'e2',summary:'Family trip to Delhi',start:{date:'2026-10-10'},description:''},
+    {id:'e3',summary:'Goa Weekend',start:{date:'2026-06-05'},description:''}
+  ]});
+  if(method==='POST') return Promise.resolve({id:'ev-'+Date.now(),summary:body?.summary});
+  return Promise.resolve({});
+}
+
+async function checkCal(){
+  try{
+    const d=await gcal('GET','/users/me/calendarList');
+    const f=(d.items||[]).find(c=>c.summary===CAL_NAME);
+    if(f){calId=f.id;showScreen('sc-main');startCd();renderCal();loadEvents();}
+    else showScreen('sc-setup');
+  } catch(e){showScreen('sc-setup');}
+}
+
+async function loadEvents(){
+  if(!calId)return;
+  try{
+    const now=new Date().toISOString(),max=new Date();max.setFullYear(max.getFullYear()+2);
+    const d=await gcal('GET',`/calendars/${encodeURIComponent(calId)}/events?timeMin=${now}&timeMax=${max.toISOString()}&orderBy=startTime&singleEvents=true&maxResults=20`);
+    const evts=(d.items||[]).filter(e=>!((e.description||'').includes(TAG)));
+    const sec=el('ev-sec');
+    if(!evts.length){sec.style.display='none';return;}
+    sec.style.display='block';
+    el('ev-list').innerHTML=evts.slice(0,4).map(e=>{
+      const dt=new Date((e.start.dateTime||e.start.date).split('T')[0]+'T00:00:00');
+      const da=dAway(dt);
+      const badge=da>=60?`<span class="ev-badge eb-gen">General</span>`:`<span class="ev-badge eb-tat">Tatkal only</span>`;
+      return `<div class="ev-item"><div><div class="ev-name">${e.summary||'Trip'}</div><div class="ev-date">${fmtS(dt)} · ${da}d away</div></div>${badge}</div>`;
+    }).join('');
+  } catch(e){}
+}
+
+/* ── Calendar render ── */
+function renderCal(){
+  set('cal-month',MF[vm]+' '+vy);
+  const g=el('dgrid');if(!g)return;g.innerHTML='';
+  const first=new Date(vy,vm,1),dow=first.getDay(),dim=new Date(vy,vm+1,0).getDate();
+  const minD=addDays(today(),1);
+  for(let i=0;i<Math.ceil((dow+dim)/7)*7;i++){
+    const dc=document.createElement('div');
+    if(i<dow||i>=dow+dim){dc.className='dc empty';}
+    else{
+      const dn=i-dow+1,cd=new Date(vy,vm,dn);
+      dc.textContent=dn;
+      const dis=cd<minD,isSel=same(cd,selDate),da=dAway(cd);
+      const isTatOnly=!dis&&da<60&&da>=1;
+      const isSun=cd.getDay()===0;
+      let cls='dc';
+      if(isSun)cls+=' sun-c';
+      if(dis)cls+=' disabled';
+      else if(isSel)cls+=' selected';
+      else if(isTatOnly)cls+=' selectable tatkal-only';
+      else cls+=' selectable';
+      dc.className=cls;
+      if(!dis)dc.onclick=()=>selectDate(cd);
+    }
+    g.appendChild(dc);
+  }
+}
+
+function chMonth(d){vm+=d;if(vm>11){vm=0;vy++;}if(vm<0){vm=11;vy--;}renderCal();}
+
+function selectDate(date){
+  selDate=date;tatSel=new Set();successShown=false;
+  renderCal();renderActPanel();
+}
+
+/* ── Action panel ── */
+function renderActPanel(){
+  const panel=el('act-panel');if(!panel)return;
+  if(!selDate){panel.innerHTML='';return;}
+  const da=dAway(selDate),genAvail=da>=60;
+  const genOpen=addDays(selDate,-60),tatOpen=addDays(selDate,-1);
+
+  const winRows=`
+    <div class="win-rows">
+      <div class="win-row ${genAvail?'':'dimmed'}">
+        <div class="wr-l"><div class="wr-dot" style="background:#22C55E"></div><div class="wr-name">General</div></div>
+        <div class="wr-date ${genAvail?'green':'red'}">${genAvail?fmtS(genOpen):'Window passed'}</div>
+      </div>
+      <div class="win-row">
+        <div class="wr-l"><div class="wr-dot" style="background:#F59E0B"></div><div class="wr-name">AC Tatkal</div></div>
+        <div class="wr-date">${fmtS(tatOpen)} · 10 AM</div>
+      </div>
+      <div class="win-row">
+        <div class="wr-l"><div class="wr-dot" style="background:#F97316"></div><div class="wr-name">Non-AC Tatkal</div></div>
+        <div class="wr-date">${fmtS(tatOpen)} · 11 AM</div>
+      </div>
+    </div>`;
+
+  if(successShown){
+    panel.innerHTML=`<div class="act-head"><div class="act-title">${fmtS(selDate)}</div><div class="act-sub">Reminder created successfully</div></div>${winRows}
+      <div class="success-strip"><div class="ss-icon">✅</div><div><div class="ss-title">Reminder added to David_Travel_Events</div><div class="ss-sub">You'll get a popup 30 min before and an email 1 hour before booking opens.</div></div></div>
+      <div style="padding:12px 16px;"><button class="btn-s" style="width:100%;" onclick="selDate=null;successShown=false;renderCal();renderActPanel();">Pick another date</button></div>`;
+    return;
+  }
+
+  if(genAvail){
+    panel.innerHTML=`<div class="act-head"><div class="act-title">${fmtS(selDate)} · ${da} days away</div><div class="act-sub">General booking opens on ${fmtS(genOpen)} at 8:00 AM</div></div>
+      ${winRows}
+      <div class="perm-sec">
+        <div class="perm-title">Set General booking reminder?</div>
+        <div class="perm-sub">A reminder will be added to <b>David_Travel_Events</b> on <b>${fmtS(genOpen)}</b> at 8:00 AM with popup + email alerts.</div>
+        <div class="btn-row">
+          <button class="btn-p" id="btn-gen" onclick="createGeneral()">Yes, set reminder</button>
+          <button class="btn-s" onclick="showTatkalInstead()">Tatkal instead</button>
+        </div>
+      </div>
+      <div id="tatkal-extra"></div>`;
+  } else {
+    panel.innerHTML=`<div class="act-head"><div class="act-title">${fmtS(selDate)} · ${da} days away</div><div class="act-sub">General window passed — Tatkal available on ${fmtS(tatOpen)}</div></div>
+      ${winRows}
+      <div class="perm-sec">
+        <div class="perm-title">Choose Tatkal reminder</div>
+        <div class="perm-sub">Select one or both Tatkal classes for <b>${fmtS(tatOpen)}</b>:</div>
+        ${tatkalOptsHTML()}
+        <div class="btn-row">
+          <button class="btn-p" id="btn-tat" onclick="createTatkal()">Set reminder${tatSel.size>1?'s':''}</button>
+        </div>
+      </div>`;
+  }
+}
+
+function tatkalOptsHTML(){
+  return `<div class="tatkal-opts">
+    <div class="topt ${tatSel.has('ac')?'sel':''}" onclick="togTat('ac')">
+      <input type="checkbox" ${tatSel.has('ac')?'checked':''} onclick="event.stopPropagation();togTat('ac')"/>
+      <div style="flex:1"><div class="topt-name">AC Tatkal</div><div class="topt-time">10:00 AM IST · 1 day before</div></div>
+      <div class="topt-dot" style="background:#F59E0B"></div>
+    </div>
+    <div class="topt ${tatSel.has('sl')?'sel':''}" onclick="togTat('sl')">
+      <input type="checkbox" ${tatSel.has('sl')?'checked':''} onclick="event.stopPropagation();togTat('sl')"/>
+      <div style="flex:1"><div class="topt-name">Non-AC / Sleeper Tatkal</div><div class="topt-time">11:00 AM IST · 1 day before</div></div>
+      <div class="topt-dot" style="background:#F97316"></div>
+    </div>
+  </div>`;
+}
+
+function togTat(type){tatSel.has(type)?tatSel.delete(type):tatSel.add(type);renderActPanel();}
+
+function showTatkalInstead(){
+  const extra=el('tatkal-extra');if(!extra)return;
+  const tatOpen=addDays(selDate,-1);
+  extra.innerHTML=`<div class="perm-sec" style="border-top:1px solid #f1f5f9;">
+    <div class="perm-title">Set Tatkal reminder instead</div>
+    <div class="perm-sub">Reminder will be set for <b>${fmtS(tatOpen)}</b>:</div>
+    ${tatkalOptsHTML()}
+    <button class="btn-p" style="width:100%;" onclick="createTatkal()">Set Tatkal reminder</button>
+  </div>`;
+}
+
+/* ── Create reminders ── */
+async function createGeneral(){
+  const btn=el('btn-gen');if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>Creating...';}
+  const genOpen=addDays(selDate,-60);
+  try{
+    await gcal('POST',`/calendars/${encodeURIComponent(calId)}/events`,{
+      summary:`🚂 IRCTC General Booking Opens — Journey ${fmtS(selDate)}`,
+      start:{dateTime:toISO(genOpen,8,0),timeZone:'Asia/Kolkata'},
+      end:{dateTime:toISO(genOpen,8,30),timeZone:'Asia/Kolkata'},
+      description:`General booking opens at 8:00 AM IST.\nJourney: ${fmt(selDate)}\nBook at: https://www.irctc.co.in\n\n${TAG}`,
+      reminders:{useDefault:false,overrides:[{method:'popup',minutes:30},{method:'email',minutes:60}]}
+    });
+    successShown=true;renderActPanel();toast('Reminder set for '+fmtS(genOpen),'ok');loadEvents();
+  } catch(e){toast('Failed to create reminder','err');if(btn){btn.disabled=false;btn.textContent='Yes, set reminder';}}
+}
+
+async function createTatkal(){
+  if(tatSel.size===0){toast('Select at least one option');return;}
+  const btn=el('btn-tat');if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>Creating...';}
+  const tatOpen=addDays(selDate,-1);
+  const tasks=[];
+  if(tatSel.has('ac')) tasks.push({h:10,label:'AC Tatkal'});
+  if(tatSel.has('sl')) tasks.push({h:11,label:'Non-AC Tatkal'});
+  try{
+    for(const t of tasks){
+      await gcal('POST',`/calendars/${encodeURIComponent(calId)}/events`,{
+        summary:`🚂 IRCTC ${t.label} Opens — Journey ${fmtS(selDate)}`,
+        start:{dateTime:toISO(tatOpen,t.h,0),timeZone:'Asia/Kolkata'},
+        end:{dateTime:toISO(tatOpen,t.h,30),timeZone:'Asia/Kolkata'},
+        description:`${t.label} booking opens at ${pad(t.h)}:00 AM IST.\nJourney: ${fmt(selDate)}\nBook at: https://www.irctc.co.in\n\n${TAG}`,
+        reminders:{useDefault:false,overrides:[{method:'popup',minutes:30},{method:'email',minutes:60}]}
+      });
+    }
+    successShown=true;renderActPanel();toast('Tatkal reminder'+(tasks.length>1?'s':'')+' set!','ok');loadEvents();
+  } catch(e){toast('Failed to create reminder','err');if(btn){btn.disabled=false;}}
+}
+</script>
+</body>
+</html>
